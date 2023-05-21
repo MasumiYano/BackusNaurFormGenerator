@@ -1,0 +1,118 @@
+
+import java.util.*;
+/**
+ * @author: Masumi Yano
+ * @version: Feb 16, 2023
+ * This class is for generating random sentences by using recursive algorithm.
+ * */
+public class GrammarSolver {
+
+    Map<String, Set<String>> myMap; //map for storing the rules.
+    private String rightSide; //right side of the rule
+    private String leftSide;//left side of the rule
+    /**
+     * This is the constructor for the GrammarSolver class.
+     * @param rules: the list of rules.
+     * @throws IllegalArgumentException if the list is null or empty.
+     * @throws IllegalArgumentException if the grammar contains more than one line for the same non-terminal.
+     *
+     * */
+    public GrammarSolver(List<String> rules){
+        //Throw IllegalArgumentException if the list given is null or empty.
+        if(rules == null || rules.isEmpty()){
+            throw new IllegalArgumentException();
+        }
+
+        //Break them apart and sore them into a Map.
+        myMap = new TreeMap<>();;
+        for(String rule: rules){
+            //Split the rule into left and right side.
+            //TODO: what if there is no "|" in the rule?
+            //.trim() is there to remove the white space. (if there's any)
+            Scanner scan = new Scanner(rule);
+            scan.useDelimiter("::="); //separate the left and right side by ::=
+            this.leftSide = scan.next().trim(); // left side of the rule, which contains the non-terminal
+            this.rightSide = scan.next().trim(); //right side of the rule, which contains the terminal or non-terminal
+
+            Scanner scan2 = new Scanner(rightSide); //scan the right side for the "|"
+            scan2.useDelimiter("\\|");// separate the right side by "|"
+            Set<String> rightSideSet = new TreeSet<>(); //set for storing the right side of the rule.
+
+             //while scan2 has next, add the next to the set.
+            while(scan2.hasNext()){
+                rightSideSet.add(scan2.next().trim());
+            }
+            //put the left side as key and right side as value.
+            myMap.put(leftSide, rightSideSet);
+        }
+
+        //Throw IllegalArgumentException if the grammar contains more than one line for the same non-terminal.
+        if(myMap.size() != rules.size()){
+            throw new IllegalArgumentException();
+        }
+    }
+
+    /**
+     * This method is for checking if the given symbol is a non-terminal.
+     * @param symbol: the given symbol.
+     * @return true if the given symbol is a non-terminal.
+     * @throws IllegalArgumentException if the string is null or length is 0.
+     * */
+    public boolean contains(String symbol){
+        //Throw IllegalArgumentException if the string is null or length is 0
+        if(symbol == null || symbol.length() == 0){
+            throw new IllegalArgumentException();
+        }
+        //else, return true if the given symbol is a non-terminal, which means it's in the keySet of the map.
+        return myMap.containsKey(symbol);
+    }
+    /**
+     * This method returns all non-terminal symbols of the grammar as sorted set of strings.
+     * @return all non-terminal symbols of the grammar as sorted set of strings.
+     * */
+    public Set<String> getSymbols(){
+        //I can return keySet since it's already sorted, and they are all non-terminal.
+        return myMap.keySet();
+    }
+
+
+    /**
+     * This method is for generating a random occurrence of the given symbol.
+     * @param symbol: the given symbol.
+     * @throws IllegalArgumentException if the given string is null or length of 0.
+     * @return result: the random occurrence of the given symbol.
+     * */
+    public String generate(String symbol){
+        //If the given string is null or length of 0, throw IllegalArgumentException
+        if(symbol == null || symbol.length() == 0){
+            throw new IllegalArgumentException();
+        }
+        //If the given string is terminal, we simply return the string
+        if(!contains(symbol)){
+            return symbol;
+        }
+        //If it's non-terminal, we are going to generate a random occurrence of the given symbol.
+        //To achieve this, we are going to use recursion to generate.
+        //First, we need to get the set of the given symbol.
+        Set<String> set = myMap.get(symbol);
+        //Then, we need to get the size of the set.
+        int size = set.size();
+        //Then, we need to get a random number between 0 and size - 1.
+        Random rand = new Random();
+        int randomNum = rand.nextInt(size);
+        //Then, we need to get the random string from the set.
+        //(String) makes sure that the object is a string.
+        //I used .toArray() so that I can use the index to get the random string.
+        String randomString = (String) set.toArray()[randomNum];
+        //Then, we need to split the random string using scanner delimiter.
+        Scanner scan = new Scanner(randomString);
+        scan.useDelimiter("\\s+"); //separate the string by white space.
+        String result = "";
+        //after that, we use recursion until we get the terminal symbol.
+        //Also, we have to have spaces between the terminal symbols.
+        while(scan.hasNext()){
+            result += generate(scan.next()) + " ";
+        }
+        return result.trim(); ///trim() is there to remove the white space at the end.
+    }
+}
